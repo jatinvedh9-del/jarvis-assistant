@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JARVIS V3</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#06111b;color:#dffaff;font:16px system-ui;min-height:100vh;display:grid;place-items:center;padding:16px}
+main{width:min(100%,620px);border:1px solid #176078;border-radius:22px;background:linear-gradient(160deg,#0c2230,#07111d);padding:22px;box-shadow:0 0 30px #00d9ff18}
+h1{color:#58eaff;letter-spacing:4px;margin:0}.sub{color:#91b8c4;font-size:13px}
+#status{margin:20px 0;padding:14px;border:1px solid #245365;border-radius:12px;background:#081923;min-height:52px}
+button{border:1px solid #27cde9;background:#0d3342;color:#e8fdff;border-radius:12px;padding:13px 16px;font-weight:650;margin:4px;cursor:pointer}
+button.primary{background:#087e9c}button:active{transform:scale(.98)}
+input{width:100%;padding:13px;border-radius:10px;border:1px solid #286072;background:#071722;color:white;margin:10px 0}
+#log{white-space:pre-wrap;line-height:1.5;max-height:240px;overflow:auto;border-top:1px solid #204352;padding-top:12px;margin-top:15px}
+small{color:#8eabb5} .mic{font-size:28px}
+</style></head>
+<body><main>
+<h1>J.A.R.V.I.S.</h1><div class="sub">PERSONAL ASSISTANT • V3 VOICE CHECK</div>
+<div id="status" role="status">Ready. Tap “Test microphone” first.</div>
+<div>
+<button class="primary" id="voice"><span class="mic">🎙️</span> Start voice</button>
+<button id="micTest">Test microphone</button>
+<button id="speak">Test speaker</button>
+</div>
+<form id="form"><input id="typed" placeholder="Type a message to JARVIS…" autocomplete="off"><button type="submit">Send text</button></form>
+<div id="log">JARVIS: Hello. Text mode is ready.</div>
+<p><small>Voice recognition depends on browser support and may not work when this page is opened as a local file. Text mode remains available.</small></p>
+</main>
+<script>
+const statusEl=document.getElementById('status'),log=document.getElementById('log');
+function status(s){statusEl.textContent=s}
+function say(t){try{if(!('speechSynthesis'in window)){status('Speech output is not supported in this browser.');return;}speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='en-IN';speechSynthesis.speak(u);}catch(e){status('Speaker error: '+e.message)}}
+function reply(t){log.textContent+='\\nYou: '+t;let x=t.toLowerCase(),r;
+if(/hello|hi|hey/.test(x))r='Hello! JARVIS is online.';
+else if(/time/.test(x))r='The time is '+new Date().toLocaleTimeString();
+else if(/study|tourism|revision/.test(x))r='Let us revise one Tourism topic. Tell me the unit or question.';
+else r='I heard: '+t+'. My basic assistant is ready; AI chat can be added later.';
+log.textContent+='\\nJARVIS: '+r; say(r);}
+document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();let v=document.getElementById('typed').value.trim();if(v){reply(v);document.getElementById('typed').value='';}});
+document.getElementById('speak').addEventListener('click',()=>{status('Testing speaker…');say('Hello Raj. JARVIS speaker test successful.');});
+document.getElementById('micTest').addEventListener('click',async()=>{if(!navigator.mediaDevices?.getUserMedia){status('This page/browser cannot request microphone access. Try opening it in Chrome from a secure website (HTTPS).');return;}
+try{let stream=await navigator.mediaDevices.getUserMedia({audio:true});stream.getTracks().forEach(t=>t.stop());status('Microphone permission works. Now tap Start voice.');}catch(e){status('Microphone issue: '+e.name+'. Check Android Settings → Apps → Chrome → Permissions → Microphone.');}});
+document.getElementById('voice').addEventListener('click',()=>{
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){status('Voice recognition is unavailable in this Chrome page. The file may need to be hosted on HTTPS. Use text chat for now.');return;}
+ try{let rec=new SR();rec.lang='en-IN';rec.interimResults=false;rec.maxAlternatives=1;
+ rec.onstart=()=>status('Listening… speak now.');
+ rec.onresult=e=>{let heard=e.results[0][0].transcript;status('Heard: '+heard);reply(heard);};
+ rec.onerror=e=>status('Voice error: '+e.error+'. Check microphone permission and internet, then retry.');
+ rec.onend=()=>{if(statusEl.textContent==='Listening… speak now.')status('Stopped listening. Tap Start voice to try again.');};
+ rec.start();
+ }catch(e){status('Could not start voice: '+e.message+'. Try hosting the page on HTTPS.');}
+});
+</script></body></html>
